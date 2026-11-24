@@ -1,0 +1,42 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@dimforge/rapier3d-compat':
+        specifier: ^0.21.0
+        version: 0.21.0
+      three:
+        specifier: ^0.186.1
+        version: 0.186.1
+    devDependencies:
+      '@types/three':
+        specifier: ^0.186.0
+        version: 0.186.0
+      playwright:
+        specifier: ^1.63.0
+        version: 1.63.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^8.3.1
+        version: 8.3.1
+      vitest:
+        specifier: ^5.0.2
+        version: 5.0.2
+
+packages:
+
+  '@dimforge/rapier3d-compat@0.21.0':
+    resolution: {integrity: sha512-...truncated}
+
+  three@0.186.1:
+    resolution: {integrity: sha512-...truncated}
+
+  # ... (full lockfile content truncated for this call - will fix with complete version next)

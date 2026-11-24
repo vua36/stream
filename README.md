@@ -1,6 +1,6 @@
 # STREAMER LIFE REAL WORLD V1
 
-A 3D streamer life simulation game built with Three.js, Rapier physics, and Vite.
+A 3D streamer life simulation game.
 
 ## Quick Start
 
@@ -11,16 +11,7 @@ pnpm dev
 
 ## Scripts
 
-- `pnpm dev` - Start development server
-- `pnpm build` - Typecheck + build + size check
-- `pnpm preview` - Preview production build
-- `pnpm test` - Run unit tests
-- `pnpm smoke` - Smoke test
-
-## Structure
-
-- `src/` - Source code (engine, game, ui, i18n)
-- `public/` - Static assets (fonts, favicon)
-- `assets/models/` - 3D models (GLB)
-- `scripts/` - Build and utility scripts
-- `tests/` - Unit tests
+- `pnpm dev`
+- `pnpm build`
+- `pnpm test`
+- `pnpm smoke`
