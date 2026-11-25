@@ -36,7 +36,8 @@ const DESK_URL = new URL('../../assets/models/streamer-desk-setup.glb', import.m
 export class World {
   readonly scene = new THREE.Scene()
   readonly sun: THREE.DirectionalLight
-  readonly spawn = new THREE.Vector3(0.8, 1.15, 3.5)
+  // Capsule center is 1 m above the floor (0.62 half-height + 0.38 radius).
+  readonly spawn = new THREE.Vector3(0.8, 1.02, 3.5)
   readonly interactables: RoomInteractable[] = [
     { id: 'computer', label: 'Máy tính', position: new THREE.Vector3(-1.2, 1.1, -2.25), radius: 1.65 },
     { id: 'phone', label: 'Điện thoại', position: new THREE.Vector3(-4.4, 0.9, 2.0), radius: 1.45 },
@@ -243,7 +244,8 @@ export class World {
       const object = gltf.scene
       const box = new THREE.Box3().setFromObject(object)
       const size = box.getSize(new THREE.Vector3())
-      const factor = 4.8 / Math.max(size.x, size.z, 0.01)
+      // Keep the furniture at a believable room scale: the human avatar is about 2.1 m tall.
+      const factor = 3.8 / Math.max(size.x, size.z, 0.01)
       object.scale.setScalar(factor)
       const fitted = new THREE.Box3().setFromObject(object)
       object.position.set(-1.0, -fitted.min.y + 0.02, -2.45)
@@ -256,7 +258,7 @@ export class World {
       })
       this.scene.add(object)
     }, undefined, () => this.onAssetError?.('Bộ nội thất streamer'))
-    this.physics.addStaticBox(new THREE.Vector3(-1.0, 0.62, -2.45), new THREE.Vector3(4.6, 1.24, 2.1))
+    this.physics.addStaticBox(new THREE.Vector3(-1.0, 0.52, -2.45), new THREE.Vector3(3.7, 1.04, 1.7))
   }
 
   private buildLighting(): void {

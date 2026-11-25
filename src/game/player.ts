@@ -5,6 +5,9 @@ import { CONFIG } from './config'
 
 const CHARACTER_URL = new URL('../../assets/models/streamer-character-animated.glb', import.meta.url).href
 const UP = new THREE.Vector3(0, 1, 0)
+const CHARACTER_HEIGHT = 2.08
+const CAPSULE_HALF_HEIGHT = 0.62
+const CAPSULE_RADIUS = 0.38
 
 type PlayerIntent = { moveX: number; moveY: number; sprint: boolean }
 
@@ -28,7 +31,7 @@ export class Player {
   constructor(private readonly physics: Physics, spawn: THREE.Vector3, private readonly onAssetError?: (label: string) => void) {
     const P = CONFIG.player
     this.body = physics.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(spawn.x, spawn.y, spawn.z))
-    this.collider = physics.world.createCollider(RAPIER.ColliderDesc.capsule(0.62, 0.38).setFriction(0.1), this.body)
+    this.collider = physics.world.createCollider(RAPIER.ColliderDesc.capsule(CAPSULE_HALF_HEIGHT, CAPSULE_RADIUS).setFriction(0.1), this.body)
     this.controller = physics.world.createCharacterController(0.02)
     this.controller.enableAutostep(0.3, 0.22, false)
     this.controller.enableSnapToGround(0.32)
@@ -114,10 +117,12 @@ export class Player {
       const object = gltf.scene
       const bounds = new THREE.Box3().setFromObject(object)
       const size = bounds.getSize(new THREE.Vector3())
-      const scale = 1.92 / Math.max(size.y, 0.01)
+      const scale = CHARACTER_HEIGHT / Math.max(size.y, 0.01)
       object.scale.setScalar(scale)
       const fitted = new THREE.Box3().setFromObject(object)
-      object.position.y -= fitted.min.y
+      // The physics body is centered on the capsule. Put the rendered feet on the
+      // capsule's bottom rather than at the body's origin; this removes the visible float.
+      object.position.y = -(CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS) - fitted.min.y
       object.traverse(child => {
         child.castShadow = true
         child.receiveShadow = true
