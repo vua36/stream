@@ -36,15 +36,16 @@ const DESK_URL = new URL('../../assets/models/streamer-desk-setup.glb', import.m
 export class World {
   readonly scene = new THREE.Scene()
   readonly sun: THREE.DirectionalLight
-  // Capsule center is 1 m above the floor (0.62 half-height + 0.38 radius).
-  readonly spawn = new THREE.Vector3(0.8, 1.02, 3.5)
+  // Capsule center is 1.13 m above the floor (0.75 half-height + 0.38 radius).
+  readonly spawn = new THREE.Vector3(0.8, 1.13, 3.5)
   readonly interactables: RoomInteractable[] = [
-    { id: 'computer', label: 'Máy tính', position: new THREE.Vector3(-1.2, 1.1, -2.25), radius: 1.65 },
+    { id: 'computer', label: 'Máy tính', position: new THREE.Vector3(-1.2, 1.0, -2.35), radius: 1.45 },
     { id: 'phone', label: 'Điện thoại', position: new THREE.Vector3(-4.4, 0.9, 2.0), radius: 1.45 },
-    { id: 'bed', label: 'Giường ngủ', position: new THREE.Vector3(4.6, 0.85, 1.2), radius: 1.8 },
-    { id: 'door', label: 'Cửa ra vào', position: new THREE.Vector3(6.7, 1.1, 3.45), radius: 1.7 },
+    { id: 'bed', label: 'Giường ngủ', position: new THREE.Vector3(4.7, 0.72, 1.15), radius: 1.55 },
+    { id: 'door', label: 'Cửa ra vào', position: new THREE.Vector3(6.7, 1.13, 3.45), radius: 1.35 },
   ]
   private readonly lights: THREE.PointLight[] = []
+  private lightsOn = true
   private onAssetError?: (label: string) => void
 
   constructor(private readonly physics: Physics, shadowMapSize: number, onAssetError?: (label: string) => void) {
@@ -72,7 +73,22 @@ export class World {
     this.buildWardrobe()
     this.buildPhoneTable()
     this.loadDeskSetup()
+    this.buildDoor()
     this.buildLighting()
+  }
+
+  get isLightsOn(): boolean {
+    return this.lightsOn
+  }
+
+  setLightsEnabled(enabled: boolean): void {
+    this.lightsOn = enabled
+    for (const light of this.lights) light.intensity = enabled ? light.userData.baseIntensity : 0
+  }
+
+  toggleLights(): boolean {
+    this.setLightsEnabled(!this.lightsOn)
+    return this.lightsOn
   }
 
   setTime(minutes: number): void {
@@ -80,7 +96,7 @@ export class World {
     const daylight = THREE.MathUtils.clamp(Math.sin((day - 0.25) * Math.PI * 2) * 0.5 + 0.5, 0.08, 1)
     this.sun.intensity = 0.45 + daylight * 2.1
     this.sun.color.setHSL(0.08, 0.55, 0.72 + daylight * 0.1)
-    for (const light of this.lights) light.intensity = light.userData.baseIntensity * (0.65 + (1 - daylight) * 0.6)
+    for (const light of this.lights) light.intensity = this.lightsOn ? light.userData.baseIntensity * (0.65 + (1 - daylight) * 0.6) : 0
     this.scene.background = new THREE.Color().setHSL(0.65, 0.38, 0.05 + daylight * 0.09)
     if (this.scene.fog) (this.scene.fog as THREE.Fog).color.copy(this.scene.background as THREE.Color)
   }
@@ -112,6 +128,14 @@ export class World {
     floor.receiveShadow = true
     this.scene.add(floor)
     this.physics.addStaticBox(new THREE.Vector3(0, -0.14, 0), new THREE.Vector3(16, 0.22, 12))
+    const safetyFloor = new THREE.Mesh(
+      new RoundedBoxGeometry(32, 0.18, 24, 5, 0.08),
+      new THREE.MeshStandardMaterial({ color: '#17192a', roughness: 0.86, metalness: 0.02 }),
+    )
+    safetyFloor.position.y = -0.42
+    safetyFloor.receiveShadow = true
+    this.scene.add(safetyFloor)
+    this.physics.addStaticBox(new THREE.Vector3(0, -0.46, 0), new THREE.Vector3(32, 0.18, 24))
 
     const wallMat = new THREE.MeshStandardMaterial({ color: '#25253b', roughness: 0.82, metalness: 0.02 })
     const trimMat = new THREE.MeshStandardMaterial({ color: '#3f3a5c', roughness: 0.55, metalness: 0.2 })
@@ -171,6 +195,7 @@ export class World {
   private buildBed(): void {
     const group = new THREE.Group()
     group.position.set(4.7, 0, 1.15)
+    group.scale.setScalar(0.72)
     const wood = new THREE.MeshStandardMaterial({ color: '#593d39', roughness: 0.62, metalness: 0.08 })
     const fabric = new THREE.MeshStandardMaterial({ color: '#46466b', roughness: 0.9 })
     const white = new THREE.MeshStandardMaterial({ color: '#d8d2e5', roughness: 0.84 })
@@ -187,12 +212,13 @@ export class World {
     group.add(frame, mattress, blanket, pillow, headboard)
     group.traverse(o => { o.castShadow = true; o.receiveShadow = true })
     this.scene.add(group)
-    this.physics.addStaticBox(new THREE.Vector3(4.7, 0.55, 1.15), new THREE.Vector3(4.8, 1.15, 2.65))
+    this.physics.addStaticBox(new THREE.Vector3(4.7, 0.4, 1.15), new THREE.Vector3(3.5, 0.85, 1.95))
   }
 
   private buildWardrobe(): void {
     const group = new THREE.Group()
     group.position.set(-5.9, 0, -3.95)
+    group.scale.setScalar(0.74)
     const wood = new THREE.MeshStandardMaterial({ color: '#43334d', roughness: 0.55, metalness: 0.15 })
     const panel = new THREE.MeshStandardMaterial({ color: '#262638', roughness: 0.36, metalness: 0.3 })
     const body = new THREE.Mesh(new RoundedBoxGeometry(3.15, 4.35, 0.86, 8, 0.14), wood)
@@ -214,7 +240,7 @@ export class World {
     group.add(body, left, right, rail)
     group.traverse(o => { o.castShadow = true; o.receiveShadow = true })
     this.scene.add(group)
-    this.physics.addStaticBox(new THREE.Vector3(-5.9, 2.15, -3.95), new THREE.Vector3(3.15, 4.35, 0.86))
+    this.physics.addStaticBox(new THREE.Vector3(-5.9, 1.62, -3.95), new THREE.Vector3(2.35, 3.25, 0.7))
   }
 
   private buildPhoneTable(): void {
@@ -244,11 +270,12 @@ export class World {
       const object = gltf.scene
       const box = new THREE.Box3().setFromObject(object)
       const size = box.getSize(new THREE.Vector3())
-      // Keep the furniture at a believable room scale: the human avatar is about 2.1 m tall.
-      const factor = 3.8 / Math.max(size.x, size.z, 0.01)
+      // The source GLB is normalized to a unit cube; fit it to a realistic 1.7 m setup,
+      // leaving the 2.28 m human clearly taller than the monitor and desk.
+      const factor = 1.7 / Math.max(size.y, 0.01)
       object.scale.setScalar(factor)
       const fitted = new THREE.Box3().setFromObject(object)
-      object.position.set(-1.0, -fitted.min.y + 0.02, -2.45)
+      object.position.set(-1.15, -fitted.min.y + 0.02, -2.55)
       object.traverse(child => {
         child.castShadow = true
         child.receiveShadow = true
@@ -258,10 +285,45 @@ export class World {
       })
       this.scene.add(object)
     }, undefined, () => this.onAssetError?.('Bộ nội thất streamer'))
-    this.physics.addStaticBox(new THREE.Vector3(-1.0, 0.52, -2.45), new THREE.Vector3(3.7, 1.04, 1.7))
+    this.physics.addStaticBox(new THREE.Vector3(-1.15, 0.78, -2.55), new THREE.Vector3(2.05, 1.55, 1.55))
+  }
+
+  private buildDoor(): void {
+    const group = new THREE.Group()
+    group.position.set(7.84, 0, 3.45)
+    group.rotation.y = Math.PI / 2
+    const frameMat = new THREE.MeshStandardMaterial({ color: '#b68a5f', roughness: 0.48, metalness: 0.12 })
+    const doorMat = new THREE.MeshStandardMaterial({ color: '#46364b', roughness: 0.5, metalness: 0.18 })
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: '#69c9df', roughness: 0.2, metalness: 0.08, transmission: 0.12, transparent: true, opacity: 0.45, emissive: '#133a58', emissiveIntensity: 0.2 })
+    const leaf = new THREE.Mesh(new RoundedBoxGeometry(0.12, 2.35, 1.45, 6, 0.08), doorMat)
+    leaf.position.set(0, 1.2, 0)
+    const window = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.72, 0.92, 5, 0.04), glassMat)
+    window.position.set(-0.07, 1.7, 0)
+    const top = new THREE.Mesh(new RoundedBoxGeometry(0.18, 0.16, 1.8, 4, 0.04), frameMat)
+    top.position.set(0, 2.45, 0)
+    const left = new THREE.Mesh(new RoundedBoxGeometry(0.18, 2.55, 0.16, 4, 0.04), frameMat)
+    left.position.set(0, 1.28, -0.84)
+    const right = left.clone()
+    right.position.z = 0.84
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.28, 16), new THREE.MeshStandardMaterial({ color: '#e9c47c', metalness: 0.75, roughness: 0.2 }))
+    handle.rotation.z = Math.PI / 2
+    handle.position.set(-0.11, 1.2, 0.52)
+    const sign = new THREE.Mesh(new RoundedBoxGeometry(0.04, 0.22, 0.62, 4, 0.03), new THREE.MeshStandardMaterial({ color: '#7fe7ff', emissive: '#1b7d95', emissiveIntensity: 1.2, roughness: 0.3 }))
+    sign.position.set(-0.1, 2.75, 0)
+    group.add(leaf, window, top, left, right, handle, sign)
+    group.traverse(object => { object.castShadow = true; object.receiveShadow = true })
+    this.scene.add(group)
   }
 
   private buildLighting(): void {
+    const fixture = new THREE.Mesh(new RoundedBoxGeometry(1.35, 0.12, 0.42, 5, 0.06), new THREE.MeshStandardMaterial({ color: '#d7e7ff', emissive: '#4a7894', emissiveIntensity: 0.5, roughness: 0.32 }))
+    fixture.position.set(-1.2, 4.88, -2.5)
+    fixture.castShadow = true
+    this.scene.add(fixture)
+    const switchPlate = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.34, 0.22, 4, 0.03), new THREE.MeshStandardMaterial({ color: '#d8e5f2', roughness: 0.42, metalness: 0.08 }))
+    switchPlate.position.set(7.78, 1.55, 2.2)
+    switchPlate.rotation.y = Math.PI / 2
+    this.scene.add(switchPlate)
     const key = new THREE.PointLight('#74ddff', 4.2, 9, 2)
     key.position.set(-1.2, 3.1, -2.7)
     key.castShadow = true

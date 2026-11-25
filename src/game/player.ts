@@ -5,11 +5,12 @@ import { CONFIG } from './config'
 
 const CHARACTER_URL = new URL('../../assets/models/streamer-character-animated.glb', import.meta.url).href
 const UP = new THREE.Vector3(0, 1, 0)
-const CHARACTER_HEIGHT = 2.08
-const CAPSULE_HALF_HEIGHT = 0.62
+const CHARACTER_HEIGHT = 2.28
+const CAPSULE_HALF_HEIGHT = 0.75
 const CAPSULE_RADIUS = 0.38
 
 type PlayerIntent = { moveX: number; moveY: number; sprint: boolean }
+type Activity = 'none' | 'computer'
 
 export class Player {
   readonly root = new THREE.Group()
@@ -27,6 +28,10 @@ export class Player {
   private loaded = false
   private loadError = false
   private walkBlend = 0
+  private activity: Activity = 'none'
+  private activityProgress = 0
+  private characterObject?: THREE.Object3D
+  private readonly appliedPose = new Map<string, THREE.Vector3>()
 
   constructor(private readonly physics: Physics, spawn: THREE.Vector3, private readonly onAssetError?: (label: string) => void) {
     const P = CONFIG.player
@@ -54,17 +59,30 @@ export class Player {
     return this.loaded
   }
 
+  get isUsingComputer(): boolean {
+    return this.activity === 'computer'
+  }
+
+  setActivity(activity: Activity): void {
+    this.activity = activity
+  }
+
   step(dt: number, intent: PlayerIntent, cameraYaw: number): void {
     const P = CONFIG.player
+    const currentAtStart = this.body.translation()
+    if (this.grounded && currentAtStart.y > 0.6 && Math.abs(currentAtStart.x) < 7.35 && Math.abs(currentAtStart.z) < 5.35) {
+      this.safe.set(currentAtStart.x, currentAtStart.y, currentAtStart.z)
+    }
     const forward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw))
     const right = new THREE.Vector3().crossVectors(forward, UP)
-    const wish = new THREE.Vector3().addScaledVector(right, intent.moveX).addScaledVector(forward, intent.moveY)
+    const blocked = this.activity === 'computer'
+    const wish = new THREE.Vector3().addScaledVector(right, blocked ? 0 : intent.moveX).addScaledVector(forward, blocked ? 0 : intent.moveY)
     const length = Math.min(1, wish.length())
     if (length > 0.01) wish.normalize()
-    const speed = (intent.sprint ? 4.8 : 3.25) * length
+    const speed = (intent.sprint ? 5.8 : 4.05) * length
     const target = wish.multiplyScalar(speed)
     const horizontal = new THREE.Vector3(this.velocity.x, 0, this.velocity.z)
-    horizontal.lerp(target, 1 - Math.exp(-18 * dt))
+    horizontal.lerp(target, 1 - Math.exp(-22 * dt))
     this.velocity.x = horizontal.x
     this.velocity.z = horizontal.z
     if (length > 0.08) this.facing = dampAngle(this.facing, Math.atan2(-this.velocity.x, -this.velocity.z), 12, dt)
@@ -79,7 +97,15 @@ export class Player {
       if (!previousGrounded) this.safe.set(this.body.translation().x, this.body.translation().y, this.body.translation().z)
     }
     const current = this.body.translation()
-    const next = { x: current.x + moved.x, y: current.y + moved.y, z: current.z + moved.z }
+    const next = {
+      x: THREE.MathUtils.clamp(current.x + moved.x, -7.35, 7.35),
+      y: current.y + moved.y,
+      z: THREE.MathUtils.clamp(current.z + moved.z, -5.35, 5.35),
+    }
+    if (!Number.isFinite(next.x) || !Number.isFinite(next.y) || !Number.isFinite(next.z) || next.y < 0.35) {
+      this.teleport(this.safe)
+      return
+    }
     this.body.setNextKinematicTranslation(next)
   }
 
@@ -100,6 +126,8 @@ export class Player {
     } else if (idle && this.walkBlend <= 0.08 && this.activeAction !== idle) {
       this.switchAction(idle, 0.25)
     }
+    this.activityProgress = THREE.MathUtils.damp(this.activityProgress, this.activity === 'computer' ? 1 : 0, 7.5, frameSeconds)
+    this.applyComputerPose()
     if (!this.loaded && !this.loadError) this.model.visible = false
   }
 
@@ -127,6 +155,7 @@ export class Player {
         child.castShadow = true
         child.receiveShadow = true
       })
+      this.characterObject = object
       this.model.add(object)
       this.mixer = new THREE.AnimationMixer(object)
       for (const clip of gltf.animations) this.actions.set(clip.name.toLowerCase(), this.mixer.clipAction(clip))
@@ -138,6 +167,36 @@ export class Player {
       this.loadError = true
       this.onAssetError?.('Model nhân vật streamer')
     })
+  }
+
+  private applyComputerPose(): void {
+    const p = this.activityProgress
+    const offsets: Array<[string, number, number, number]> = [
+      ['L_Thigh', -0.95, 0, 0],
+      ['R_Thigh', -0.95, 0, 0],
+      ['L_Calf', 1.5, 0, 0],
+      ['R_Calf', 1.5, 0, 0],
+      ['Spine01', -0.16, 0, 0],
+      ['L_Upperarm', -0.28, 0, -0.08],
+      ['R_Upperarm', -0.28, 0, 0.08],
+      ['L_Forearm', 0.48, 0, 0],
+      ['R_Forearm', 0.48, 0, 0],
+    ]
+    for (const [name, x, y, z] of offsets) {
+      const bone = this.characterObject?.getObjectByName(name)
+      if (!bone) continue
+      const previous = this.appliedPose.get(name)
+      if (previous) bone.rotation.set(bone.rotation.x - previous.x, bone.rotation.y - previous.y, bone.rotation.z - previous.z)
+      const next = new THREE.Vector3(x * p, y * p, z * p)
+      if (p > 0.002) {
+        bone.rotation.set(bone.rotation.x + next.x, bone.rotation.y + next.y, bone.rotation.z + next.z)
+        this.appliedPose.set(name, next)
+      } else {
+        this.appliedPose.delete(name)
+      }
+    }
+    this.model.position.y = -0.56 * p
+    this.model.position.z = -0.1 * p
   }
 
   private switchAction(next: THREE.AnimationAction, fade: number): void {

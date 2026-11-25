@@ -47,6 +47,11 @@ export type StreamerState = {
   liveElapsed: number
   liveViewers: number
   liveRevenue: number
+  livePeakViewers: number
+  liveLikes: number
+  liveFollows: number
+  liveComments: string[]
+  lightsOn: boolean
 }
 
 export type GameHooks = {
@@ -84,6 +89,7 @@ export class Game {
     this.world.scene.add(this.player.root)
     this.cam.reset(this.world.spawn, Math.PI)
     this.world.setTime(this.state.timeMinutes)
+    this.world.setLightsEnabled(this.state.lightsOn)
   }
 
   get camera(): THREE.PerspectiveCamera {
@@ -96,6 +102,22 @@ export class Game {
 
   get interaction(): RoomInteractable | null {
     return this.world.nearestInteractable(this.player.position)
+  }
+
+  useComputer(): void {
+    if (this.mode !== 'playing') return
+    this.player.setActivity('computer')
+  }
+
+  leaveComputer(): void {
+    this.player.setActivity('none')
+  }
+
+  toggleLights(): void {
+    this.state.lightsOn = this.world.toggleLights()
+    this.hooks.banner(this.state.lightsOn ? 'Đã bật đèn phòng' : 'Đã tắt đèn phòng')
+    this.pushState()
+    this.save()
   }
 
   start(): void {
@@ -207,6 +229,10 @@ export class Game {
     this.state.liveElapsed = 0
     this.state.liveViewers = Math.max(3, Math.round(this.state.followers * 0.18 + this.state.channelQuality * 4 + Math.random() * 8))
     this.state.liveRevenue = 0
+    this.state.livePeakViewers = this.state.liveViewers
+    this.state.liveLikes = 0
+    this.state.liveFollows = 0
+    this.state.liveComments = [`@daily.dreamer: Đã lên sóng chủ đề ${topic}!`]
     this.hooks.banner(`Đang live: ${this.state.liveTitle}`)
     this.pushState()
   }
@@ -215,11 +241,12 @@ export class Game {
     if (!this.state.live) return
     const duration = Math.max(1, this.state.liveElapsed)
     const qualityFactor = THREE.MathUtils.clamp(this.state.channelQuality / 100, 0.45, 1.2)
-    const followers = Math.max(1, Math.round(this.state.liveViewers * duration * 0.035 * qualityFactor))
+    const followers = Math.max(1, this.state.liveFollows || Math.round(this.state.liveViewers * duration * 0.035 * qualityFactor))
     const views = Math.max(1, Math.round(this.state.liveViewers * duration * 1.7))
     const income = Math.max(1, Math.round(this.state.liveRevenue))
     this.state.followers += followers
     this.state.views += views
+    this.state.likes += this.state.liveLikes
     this.state.money += income
     this.state.totalIncome += income
     this.state.livestreams += 1
@@ -326,6 +353,18 @@ export class Game {
     const contentQuality = THREE.MathUtils.clamp(this.state.channelQuality * 0.58 + this.state.mood * 0.2 + this.state.energy * 0.16, 0, 100)
     const volatility = (Math.random() - 0.47) * 2.8
     this.state.liveViewers = Math.max(0, Math.round(this.state.liveViewers + (contentQuality - 52) * dt * 0.04 + volatility))
+    this.state.livePeakViewers = Math.max(this.state.livePeakViewers, this.state.liveViewers)
+    this.state.liveLikes += Math.max(0, Math.round(this.state.liveViewers * dt * (contentQuality / 1200)))
+    this.state.liveFollows += Math.max(0, Math.round(this.state.liveViewers * dt * (contentQuality / 9000)))
+    if (Math.floor(this.state.liveElapsed * 2) !== Math.floor((this.state.liveElapsed - dt / 4) * 2)) {
+      const comments = [
+        'Chat: Setup ánh sáng hôm nay đẹp quá!',
+        'Chat: Chủ đề này cuốn thật sự.',
+        'Chat: Ai mới vào nhớ thả like nhé.',
+        'Chat: Cho xin lịch live tuần này!',
+      ]
+      this.state.liveComments = [...this.state.liveComments.slice(-3), comments[Math.floor(Math.random() * comments.length)]]
+    }
     this.state.liveRevenue += Math.max(0, this.state.liveViewers * 0.006 * (contentQuality / 70)) * dt
     this.state.liveElapsed += dt / 4
     if (this.state.liveElapsed >= this.state.liveDuration) this.stopLivestream()
@@ -390,6 +429,11 @@ export function defaultState(): StreamerState {
     liveElapsed: 0,
     liveViewers: 0,
     liveRevenue: 0,
+    livePeakViewers: 0,
+    liveLikes: 0,
+    liveFollows: 0,
+    liveComments: [],
+    lightsOn: true,
   }
 }
 
@@ -406,6 +450,11 @@ function loadState(): StreamerState {
       liveElapsed: 0,
       liveViewers: 0,
       liveRevenue: 0,
+      livePeakViewers: 0,
+      liveLikes: 0,
+      liveFollows: 0,
+      liveComments: Array.isArray(parsed.liveComments) ? parsed.liveComments.filter((comment): comment is string => typeof comment === 'string').slice(-8) : [],
+      lightsOn: parsed.lightsOn !== false,
     }
   } catch {
     return fallback
