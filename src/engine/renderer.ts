@@ -16,7 +16,10 @@ export const QUALITY_PRESETS: Record<Quality, Preset> = {
 export function suggestQuality(): Quality {
   const coarse = matchMedia('(pointer: coarse)').matches
   const cores = navigator.hardwareConcurrency ?? 4
-  if (coarse || cores <= 4) return 'medium'
+  // Touch devices prioritize a stable frame rate and responsive controls over
+  // shadow quality. The in-game settings can still raise quality explicitly.
+  if (coarse) return 'low'
+  if (cores <= 4) return 'medium'
   return 'high'
 }
 
