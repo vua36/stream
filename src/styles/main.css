@@ -10,3 +10,36 @@
 @media(max-width:900px),(max-height:560px){.hud-right{width:min(220px,30vw)}.channel-card{min-width:190px}.channel-card strong{font-size:13px}.cash-card strong{font-size:17px}.hud-left,.hud-right{top:calc(68px + var(--safe-t))}.stream-layout{grid-template-columns:1fr 1fr}.preview-frame{min-height:210px}.title-copy{left:6vw}.title-copy h1{font-size:clamp(40px,10vw,80px)}}
 @media(max-width:650px){.hud-left{left:calc(12px + var(--safe-l))}.hud-right{right:calc(12px + var(--safe-r));width:190px}.cash-card,.needs-card{display:none}.channel-card{min-width:170px;padding:9px}.channel-card small{font-size:9px}.hud-bottom{left:calc(12px + var(--safe-l));right:calc(12px + var(--safe-r))}.interaction-pill{font-size:9px;max-width:45vw}.interaction-pill .key-hint{display:none}.mobile-actions{display:none}.app-grid{grid-template-columns:repeat(2,1fr)}.panel-window{padding:17px}.stream-layout{grid-template-columns:1fr}.preview-frame{min-height:145px}.analytics-row{grid-template-columns:1fr}.title-mini{display:none}.title-tags{max-width:300px}.cta{min-width:230px}.brand-chip b{font-size:10px}.day-chip strong{font-size:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Mobile-first touch controls: generous hit areas, compact visual weight, no browser gestures. */
+@media (pointer: coarse), (max-width: 900px) {
+  .touch-stick { width: 154px; height: 154px; right: calc(22px + var(--safe-r)); bottom: calc(48px + var(--safe-b)); border-width: 3px; opacity: .9; }
+  .touch-stick:after { inset: 16px; }
+  .touch-stick i { width: 66px; height: 66px; margin: -33px; }
+  .touch-btn { width: 66px; height: 66px; min-width: 66px; min-height: 66px; border-width: 2px; font-size: 22px; }
+  .touch-interact { right: calc(198px + var(--safe-r)); bottom: calc(72px + var(--safe-b)); }
+  .touch-menu { left: calc(18px + var(--safe-l)); bottom: calc(28px + var(--safe-b)); }
+  .mobile-actions { gap: 10px; }
+  .mobile-actions button { min-width: 78px; min-height: 58px; padding: 8px 11px; border-radius: 12px; font-size: 21px; }
+  .mobile-actions small { font-size: 9px; font-weight: 800; }
+  .interaction-pill { min-height: 42px; padding-right: 12px; border-radius: 14px; }
+}
+@media (max-width: 650px) {
+  .touch-stick { width: 142px; height: 142px; right: calc(16px + var(--safe-r)); bottom: calc(44px + var(--safe-b)); }
+  .touch-btn { width: 62px; height: 62px; min-width: 62px; min-height: 62px; }
+  .touch-interact { right: calc(174px + var(--safe-r)); bottom: calc(66px + var(--safe-b)); }
+  .touch-menu { bottom: calc(22px + var(--safe-b)); }
+}
+@media (pointer: coarse), (max-width: 900px) {
+  .touch-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .touch-btn b { line-height: 1; }
+  .touch-btn small { font-size: 7px; letter-spacing: .08em; font-weight: 800; color: var(--muted); line-height: 1; }
+  .touch-btn.is-down small { color: #07101c; }
+}
+@media (min-width: 651px) and (max-width: 900px) and (pointer: coarse) {
+  .touch-menu { display: none; }
+}
+@media (pointer: coarse) {
+  .interaction-pill { max-width: 320px; }
+  .interaction-label { font-size: 9px; letter-spacing: 0; }
+}
