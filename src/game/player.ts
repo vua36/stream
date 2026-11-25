@@ -5,9 +5,9 @@ import { CONFIG } from './config'
 
 const CHARACTER_URL = new URL('../../assets/models/streamer-character-animated.glb', import.meta.url).href
 const UP = new THREE.Vector3(0, 1, 0)
-const CHARACTER_HEIGHT = 2.28
-const CAPSULE_HALF_HEIGHT = 0.75
-const CAPSULE_RADIUS = 0.38
+const CHARACTER_HEIGHT = 2.55
+const CAPSULE_HALF_HEIGHT = 0.87
+const CAPSULE_RADIUS = 0.40
 
 type PlayerIntent = { moveX: number; moveY: number; sprint: boolean }
 type Activity = 'none' | 'computer'
@@ -70,7 +70,7 @@ export class Player {
   step(dt: number, intent: PlayerIntent, cameraYaw: number): void {
     const P = CONFIG.player
     const currentAtStart = this.body.translation()
-    if (this.grounded && currentAtStart.y > 0.6 && Math.abs(currentAtStart.x) < 7.35 && Math.abs(currentAtStart.z) < 5.35) {
+    if (this.grounded && currentAtStart.y > 0.82 && Math.abs(currentAtStart.x) < 7.35 && Math.abs(currentAtStart.z) < 5.35) {
       this.safe.set(currentAtStart.x, currentAtStart.y, currentAtStart.z)
     }
     const forward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw))
@@ -102,7 +102,7 @@ export class Player {
       y: current.y + moved.y,
       z: THREE.MathUtils.clamp(current.z + moved.z, -5.35, 5.35),
     }
-    if (!Number.isFinite(next.x) || !Number.isFinite(next.y) || !Number.isFinite(next.z) || next.y < 0.35) {
+    if (!Number.isFinite(next.x) || !Number.isFinite(next.y) || !Number.isFinite(next.z) || next.y < 0.55) {
       this.teleport(this.safe)
       return
     }
