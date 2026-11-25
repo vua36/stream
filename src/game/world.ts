@@ -36,13 +36,13 @@ const DESK_URL = new URL('../../assets/models/streamer-desk-setup.glb', import.m
 export class World {
   readonly scene = new THREE.Scene()
   readonly sun: THREE.DirectionalLight
-  // Capsule center is 1.13 m above the floor (0.75 half-height + 0.38 radius).
-  readonly spawn = new THREE.Vector3(0.8, 1.13, 3.5)
+  // Capsule center is 1.27 m above the floor (0.87 half-height + 0.40 radius).
+  readonly spawn = new THREE.Vector3(0.8, 1.27, 3.5)
   readonly interactables: RoomInteractable[] = [
     { id: 'computer', label: 'Máy tính', position: new THREE.Vector3(-1.2, 1.0, -2.35), radius: 1.45 },
     { id: 'phone', label: 'Điện thoại', position: new THREE.Vector3(-4.4, 0.9, 2.0), radius: 1.45 },
     { id: 'bed', label: 'Giường ngủ', position: new THREE.Vector3(4.7, 0.72, 1.15), radius: 1.55 },
-    { id: 'door', label: 'Cửa ra vào', position: new THREE.Vector3(6.7, 1.13, 3.45), radius: 1.35 },
+    { id: 'door', label: 'Cửa ra vào', position: new THREE.Vector3(6.7, 1.27, 3.45), radius: 1.35 },
   ]
   private readonly lights: THREE.PointLight[] = []
   private lightsOn = true
@@ -139,14 +139,14 @@ export class World {
 
     const wallMat = new THREE.MeshStandardMaterial({ color: '#25253b', roughness: 0.82, metalness: 0.02 })
     const trimMat = new THREE.MeshStandardMaterial({ color: '#3f3a5c', roughness: 0.55, metalness: 0.2 })
-    const back = this.wall(new THREE.Vector3(0, 2.5, -6), new THREE.Vector3(16, 5, 0.22), wallMat)
-    const left = this.wall(new THREE.Vector3(-8, 2.5, 0), new THREE.Vector3(0.22, 5, 12), wallMat)
-    const right = this.wall(new THREE.Vector3(8, 2.5, 0), new THREE.Vector3(0.22, 5, 12), wallMat)
-    this.physics.addStaticBox(back.position, new THREE.Vector3(16, 5, 0.22))
-    this.physics.addStaticBox(left.position, new THREE.Vector3(0.22, 5, 12))
-    this.physics.addStaticBox(right.position, new THREE.Vector3(0.22, 5, 12))
+    const back = this.wall(new THREE.Vector3(0, 3.05, -6), new THREE.Vector3(16, 6.1, 0.22), wallMat)
+    const left = this.wall(new THREE.Vector3(-8, 3.05, 0), new THREE.Vector3(0.22, 6.1, 12), wallMat)
+    const right = this.wall(new THREE.Vector3(8, 3.05, 0), new THREE.Vector3(0.22, 6.1, 12), wallMat)
+    this.physics.addStaticBox(back.position, new THREE.Vector3(16, 6.1, 0.22))
+    this.physics.addStaticBox(left.position, new THREE.Vector3(0.22, 6.1, 12))
+    this.physics.addStaticBox(right.position, new THREE.Vector3(0.22, 6.1, 12))
 
-    const ceiling = this.wall(new THREE.Vector3(0, 5.15, 0), new THREE.Vector3(16, 0.18, 12), new THREE.MeshStandardMaterial({ color: '#15172a', roughness: 0.9 }))
+    const ceiling = this.wall(new THREE.Vector3(0, 6.25, 0), new THREE.Vector3(16, 0.18, 12), new THREE.MeshStandardMaterial({ color: '#15172a', roughness: 0.9 }))
     ceiling.receiveShadow = true
     for (const x of [-7.7, 7.7]) this.addTrim(new THREE.Vector3(x, 0.28, 0), new THREE.Vector3(0.08, 0.22, 11.6), trimMat)
     this.addTrim(new THREE.Vector3(0, 0.28, -5.82), new THREE.Vector3(15.6, 0.22, 0.08), trimMat)
@@ -195,7 +195,7 @@ export class World {
   private buildBed(): void {
     const group = new THREE.Group()
     group.position.set(4.7, 0, 1.15)
-    group.scale.setScalar(0.72)
+    group.scale.setScalar(0.60)
     const wood = new THREE.MeshStandardMaterial({ color: '#593d39', roughness: 0.62, metalness: 0.08 })
     const fabric = new THREE.MeshStandardMaterial({ color: '#46466b', roughness: 0.9 })
     const white = new THREE.MeshStandardMaterial({ color: '#d8d2e5', roughness: 0.84 })
@@ -218,7 +218,7 @@ export class World {
   private buildWardrobe(): void {
     const group = new THREE.Group()
     group.position.set(-5.9, 0, -3.95)
-    group.scale.setScalar(0.74)
+    group.scale.setScalar(0.62)
     const wood = new THREE.MeshStandardMaterial({ color: '#43334d', roughness: 0.55, metalness: 0.15 })
     const panel = new THREE.MeshStandardMaterial({ color: '#262638', roughness: 0.36, metalness: 0.3 })
     const body = new THREE.Mesh(new RoundedBoxGeometry(3.15, 4.35, 0.86, 8, 0.14), wood)
@@ -261,7 +261,7 @@ export class World {
     group.add(phone)
     group.traverse(o => { o.castShadow = true; o.receiveShadow = true })
     this.scene.add(group)
-    this.physics.addStaticBox(new THREE.Vector3(-4.4, 0.45, 2), new THREE.Vector3(1.65, 0.9, 1.2))
+    this.physics.addStaticBox(new THREE.Vector3(-4.4, 0.40, 2), new THREE.Vector3(1.45, 0.78, 1.08))
   }
 
   private loadDeskSetup(): void {
@@ -272,7 +272,7 @@ export class World {
       const size = box.getSize(new THREE.Vector3())
       // The source GLB is normalized to a unit cube; fit it to a realistic 1.7 m setup,
       // leaving the 2.28 m human clearly taller than the monitor and desk.
-      const factor = 1.7 / Math.max(size.y, 0.01)
+      const factor = 1.38 / Math.max(size.y, 0.01)
       object.scale.setScalar(factor)
       const fitted = new THREE.Box3().setFromObject(object)
       object.position.set(-1.15, -fitted.min.y + 0.02, -2.55)
@@ -285,7 +285,7 @@ export class World {
       })
       this.scene.add(object)
     }, undefined, () => this.onAssetError?.('Bộ nội thất streamer'))
-    this.physics.addStaticBox(new THREE.Vector3(-1.15, 0.78, -2.55), new THREE.Vector3(2.05, 1.55, 1.55))
+    this.physics.addStaticBox(new THREE.Vector3(-1.15, 0.64, -2.55), new THREE.Vector3(1.78, 1.28, 1.38))
   }
 
   private buildDoor(): void {
