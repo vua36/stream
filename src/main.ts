@@ -37,6 +37,9 @@ async function boot(): Promise<void> {
       ui.show('pause')
       input.unlockPointer()
     },
+    closePanel: () => game?.leaveComputer(),
+    useComputer: () => game?.useComputer(),
+    toggleLights: () => game?.toggleLights(),
     quit: () => {
       game?.toTitle()
       ui.show('title')
