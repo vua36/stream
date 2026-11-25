@@ -7,7 +7,7 @@ export class TouchControls {
   private last = { x: 0, y: 0 }
   private readonly stick: HTMLElement
   private readonly knob: HTMLElement
-  private readonly radius = 58
+  private readonly radius = 64
 
   constructor(root: HTMLElement, private readonly input: Input, private readonly active: () => boolean) {
     const layer = root.querySelector<HTMLElement>('.touch')!
